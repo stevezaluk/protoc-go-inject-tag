@@ -26,6 +26,11 @@ import (
 
 var cfgFile string
 
+const (
+	defaultConfigPath = "/.config/protoc-go-inject-tag"
+	defaultConfigName = "config.json"
+)
+
 var rootCmd = &cobra.Command{
 	Use:   "protoc-go-inject-tag",
 	Short: "Inject struct tags into protobuf generated messages for GoLang",
@@ -41,7 +46,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.protoc-go-inject-tag.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/config/protoc-go-inject-tag/config.json)")
 }
 
 func initConfig() {
@@ -50,12 +55,12 @@ func initConfig() {
 	} else {
 		home, err := homedir.Dir()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			panic(err)
 		}
 
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".protoc-go-inject-tag")
+		viper.SetConfigType("json")
+		viper.AddConfigPath(home + defaultConfigPath)
+		viper.SetConfigName(defaultConfigName)
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
