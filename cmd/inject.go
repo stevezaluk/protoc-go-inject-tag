@@ -48,6 +48,9 @@ func init() {
 	injectCmd.Flags().StringP("input", "i", "", "The input path you want to search for protobufs with")
 	viper.BindPFlag("input", injectCmd.Flags().Lookup("input"))
 
+	injectCmd.Flags().BoolP("verbose", "v", false, "Enable extended verbosity in logging")
+	viper.BindPFlag("verbose", injectCmd.Flags().Lookup("verbose"))
+
 	injectCmd.Flags().StringP("file-ext", "f", ".pb.go", "The file extensions that should be considered for injection")
 	viper.BindPFlag("tag.file-ext", injectCmd.Flags().Lookup("file-ext"))
 
