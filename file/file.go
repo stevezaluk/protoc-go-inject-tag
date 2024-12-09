@@ -2,13 +2,16 @@ package file
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 	"github.com/stevezaluk/protoc-go-inject-tag/inject"
 	"github.com/stevezaluk/protoc-go-inject-tag/verbose"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"io"
+	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -144,4 +147,42 @@ func WriteFile(inputPath string, areas []inject.TextArea, removeTagComment bool)
 		verbose.Logf("file %q is injected with custom tags", inputPath)
 	}
 	return
+}
+
+func IterFiles(inputPath string) {
+	globs, err := filepath.Glob(inputPath)
+	if err != nil {
+		panic(err)
+	}
+
+	var fileCount int
+	for _, path := range globs {
+		finfo, err := os.Stat(path)
+		if err != nil {
+			panic(err)
+		}
+
+		if finfo.IsDir() {
+			continue
+		}
+
+		if !strings.HasSuffix(strings.ToLower(finfo.Name()), ".go") {
+			continue
+		}
+
+		fileCount++
+
+		areas, err := ParseFile(path, nil, viper.GetStringSlice("tag.skip"))
+		if err != nil {
+			panic(err)
+		}
+
+		if err = WriteFile(path, areas, viper.GetBool("tag.remove-comments")); err != nil {
+			panic(err)
+		}
+	}
+
+	if fileCount == 0 {
+		log.Fatalf("input %q matched no files; see -help", inputPath)
+	}
 }
