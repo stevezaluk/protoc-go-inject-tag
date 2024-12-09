@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func parseFile(inputPath string, src interface{}, xxxSkip []string) (areas []inject.TextArea, err error) {
+func ParseFile(inputPath string, src interface{}, xxxSkip []string) (areas []inject.TextArea, err error) {
 	verbose.Logf("parsing file %q for inject tag comments", inputPath)
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, inputPath, src, parser.ParseComments)
@@ -115,7 +115,7 @@ func parseFile(inputPath string, src interface{}, xxxSkip []string) (areas []inj
 	return
 }
 
-func writeFile(inputPath string, areas []inject.TextArea, removeTagComment bool) (err error) {
+func WriteFile(inputPath string, areas []inject.TextArea, removeTagComment bool) (err error) {
 	f, err := os.Open(inputPath)
 	if err != nil {
 		return
