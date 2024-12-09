@@ -4,19 +4,18 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"github.com/stevezaluk/protoc-go-inject-tag/inject"
-	"github.com/stevezaluk/protoc-go-inject-tag/verbose"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 func ParseFile(inputPath string, src interface{}, xxxSkip []string) (areas []inject.TextArea, err error) {
-	verbose.Logf("parsing file %q for inject tag comments", inputPath)
+	slog.Debug("parsing file for inject tag comments", "file", inputPath)
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, inputPath, src, parser.ParseComments)
 	if err != nil {
@@ -98,7 +97,7 @@ func ParseFile(inputPath string, src interface{}, xxxSkip []string) (areas []inj
 				}
 
 				if strings.Contains(comment.Text, "inject_tag") {
-					verbose.Logf("warn: deprecated 'inject_tag' used")
+					slog.Warn("warn: deprecated 'inject_tag' used")
 				}
 
 				currentTag := field.Tag.Value
@@ -114,7 +113,7 @@ func ParseFile(inputPath string, src interface{}, xxxSkip []string) (areas []inj
 			}
 		}
 	}
-	verbose.Logf("parsed file %q, number of fields to inject custom tags: %d", inputPath, len(areas))
+	slog.Debug("parsed file, number of fields to inject custom tags", "file", inputPath, "areaCount", len(areas))
 	return
 }
 
@@ -136,7 +135,7 @@ func WriteFile(inputPath string, areas []inject.TextArea, removeTagComment bool)
 	// inject custom tags from tail of file first to preserve order
 	for i := range areas {
 		area := areas[len(areas)-i-1]
-		verbose.Logf("inject custom tag %q to expression %q", area.InjectTag, string(contents[area.Start-1:area.End-1]))
+		slog.Debug("injected custom tag to expression", "tag", area.InjectTag, "expr", string(contents[area.Start-1:area.End-1]))
 		contents = inject.InjectTag(contents, area, removeTagComment)
 	}
 	if err = os.WriteFile(inputPath, contents, 0o644); err != nil {
@@ -144,7 +143,7 @@ func WriteFile(inputPath string, areas []inject.TextArea, removeTagComment bool)
 	}
 
 	if len(areas) > 0 {
-		verbose.Logf("file %q is injected with custom tags", inputPath)
+		slog.Debug("file is injected with custom tags", "file", inputPath)
 	}
 	return
 }
@@ -183,6 +182,6 @@ func IterFiles(inputPath string) {
 	}
 
 	if fileCount == 0 {
-		log.Fatalf("input %q matched no files; see -help", inputPath)
+		slog.Error("input matched no files; see --help", "file", inputPath)
 	}
 }
