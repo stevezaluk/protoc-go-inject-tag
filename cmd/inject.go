@@ -18,6 +18,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/viper"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -26,6 +27,16 @@ var injectCmd = &cobra.Command{
 	Use:   "inject",
 	Short: "Inject tags into your protobuf models",
 	Long:  ``,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if viper.GetString("input") == "" {
+			cwd, err := os.Getwd()
+			if err != nil {
+				panic(err)
+			}
+
+			viper.Set("input", cwd)
+		}
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("inject called")
 	},
