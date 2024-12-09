@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/viper"
 	protoFiles "github.com/stevezaluk/protoc-go-inject-tag/file"
 	"log"
+	"log/slog"
 )
 
 var injectCmd = &cobra.Command{
@@ -27,6 +28,10 @@ var injectCmd = &cobra.Command{
 	Short: "Inject tags into your protobuf models",
 	Long:  ``,
 	PreRun: func(cmd *cobra.Command, args []string) {
+		if viper.GetBool("verbose") {
+			slog.SetLogLoggerLevel(slog.LevelDebug)
+		}
+
 		if viper.GetString("input") == "" {
 			log.Fatal("Input file's must be declared")
 		}
