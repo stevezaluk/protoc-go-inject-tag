@@ -1,34 +1,19 @@
-package main
+package file
 
 import (
 	"fmt"
+	"github.com/stevezaluk/protoc-go-inject-tag/inject"
+	"github.com/stevezaluk/protoc-go-inject-tag/verbose"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"io"
 	"os"
-	"regexp"
 	"strings"
 )
 
-var (
-	rComment = regexp.MustCompile(`^//.*?@(?i:gotags?|inject_tags?):\s*(.*)$`)
-	rInject  = regexp.MustCompile("`.+`$")
-	rTags    = regexp.MustCompile(`[\w_]+:"[^"]+"`)
-	rAll     = regexp.MustCompile(".*")
-)
-
-type textArea struct {
-	Start        int
-	End          int
-	CurrentTag   string
-	InjectTag    string
-	CommentStart int
-	CommentEnd   int
-}
-
-func parseFile(inputPath string, src interface{}, xxxSkip []string) (areas []textArea, err error) {
-	logf("parsing file %q for inject tag comments", inputPath)
+func parseFile(inputPath string, src interface{}, xxxSkip []string) (areas []inject.TextArea, err error) {
+	verbose.Logf("parsing file %q for inject tag comments", inputPath)
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, inputPath, src, parser.ParseComments)
 	if err != nil {
@@ -77,7 +62,7 @@ func parseFile(inputPath string, src interface{}, xxxSkip []string) (areas []tex
 				name := field.Names[0].Name
 				if len(xxxSkip) > 0 && strings.HasPrefix(name, "XXX") {
 					currentTag := field.Tag.Value
-					area := textArea{
+					area := inject.TextArea{
 						Start:      int(field.Pos()),
 						End:        int(field.End()),
 						CurrentTag: currentTag[1 : len(currentTag)-1],
@@ -104,17 +89,17 @@ func parseFile(inputPath string, src interface{}, xxxSkip []string) (areas []tex
 			}
 
 			for _, comment := range comments {
-				tag := tagFromComment(comment.Text)
+				tag := inject.TagFromComment(comment.Text)
 				if tag == "" {
 					continue
 				}
 
 				if strings.Contains(comment.Text, "inject_tag") {
-					logf("warn: deprecated 'inject_tag' used")
+					verbose.Logf("warn: deprecated 'inject_tag' used")
 				}
 
 				currentTag := field.Tag.Value
-				area := textArea{
+				area := inject.TextArea{
 					Start:        int(field.Pos()),
 					End:          int(field.End()),
 					CurrentTag:   currentTag[1 : len(currentTag)-1],
@@ -126,11 +111,11 @@ func parseFile(inputPath string, src interface{}, xxxSkip []string) (areas []tex
 			}
 		}
 	}
-	logf("parsed file %q, number of fields to inject custom tags: %d", inputPath, len(areas))
+	verbose.Logf("parsed file %q, number of fields to inject custom tags: %d", inputPath, len(areas))
 	return
 }
 
-func writeFile(inputPath string, areas []textArea, removeTagComment bool) (err error) {
+func writeFile(inputPath string, areas []inject.TextArea, removeTagComment bool) (err error) {
 	f, err := os.Open(inputPath)
 	if err != nil {
 		return
@@ -148,15 +133,15 @@ func writeFile(inputPath string, areas []textArea, removeTagComment bool) (err e
 	// inject custom tags from tail of file first to preserve order
 	for i := range areas {
 		area := areas[len(areas)-i-1]
-		logf("inject custom tag %q to expression %q", area.InjectTag, string(contents[area.Start-1:area.End-1]))
-		contents = injectTag(contents, area, removeTagComment)
+		verbose.Logf("inject custom tag %q to expression %q", area.InjectTag, string(contents[area.Start-1:area.End-1]))
+		contents = inject.InjectTag(contents, area, removeTagComment)
 	}
 	if err = os.WriteFile(inputPath, contents, 0o644); err != nil {
 		return
 	}
 
 	if len(areas) > 0 {
-		logf("file %q is injected with custom tags", inputPath)
+		verbose.Logf("file %q is injected with custom tags", inputPath)
 	}
 	return
 }
