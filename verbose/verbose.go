@@ -1,4 +1,4 @@
-package main
+package verbose
 
 import (
 	"log"
@@ -6,7 +6,7 @@ import (
 
 var verbose = false
 
-func logf(format string, v ...interface{}) {
+func Logf(format string, v ...interface{}) {
 	if !verbose {
 		return
 	}
