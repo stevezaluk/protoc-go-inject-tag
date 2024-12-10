@@ -1,6 +1,7 @@
 package file
 
 import (
+	"errors"
 	"fmt"
 	"github.com/spf13/viper"
 	"github.com/stevezaluk/protoc-go-inject-tag/inject"
@@ -148,40 +149,81 @@ func WriteFile(inputPath string, areas []inject.TextArea, removeTagComment bool)
 	return
 }
 
-func IterFiles(inputPath string) {
-	globs, err := filepath.Glob(inputPath)
+/*
+IsFileProtobuf Validates that the path is both a file and has the extension passed in tag.file-ext.
+tag.file-ext defaults to ".pb.go" if one is not passed
+*/
+func IsFileProtobuf(path string) bool {
+	if strings.HasSuffix(strings.ToLower(path), viper.GetString("tag.file-ext")) {
+		return true
+	}
+
+	return false
+}
+
+/*
+ProcessFile Converts the file passed in path to an AST and returns text areas to be injected
+*/
+func ProcessFile(path string) {
+	areas, err := ParseFile(path, nil, viper.GetStringSlice("tag.skip"))
 	if err != nil {
-		panic(err)
+		slog.Error("Error while converting file to AST", "err", err)
+		return
 	}
 
-	var fileCount int
-	for _, path := range globs {
-		finfo, err := os.Stat(path)
-		if err != nil {
-			panic(err)
-		}
+	if err = WriteFile(path, areas, viper.GetBool("tag.remove-comments")); err != nil {
+		slog.Error("Error while writing file to disk or injecting tags", "err", err)
+		return
+	}
+}
 
-		if finfo.IsDir() {
-			continue
-		}
+/*
+WalkFunc Handler function that gets called for each discovered file in WalkDir. If the path is a file, then it processes
+it.
+*/
+func walkFunc(path string, info os.FileInfo, err error) error {
+	if err != nil {
+		return err
+	}
 
-		if !strings.HasSuffix(strings.ToLower(finfo.Name()), ".go") {
-			continue
-		}
-
-		fileCount++
-
-		areas, err := ParseFile(path, nil, viper.GetStringSlice("tag.skip"))
-		if err != nil {
-			panic(err)
-		}
-
-		if err = WriteFile(path, areas, viper.GetBool("tag.remove-comments")); err != nil {
-			panic(err)
+	if !info.IsDir() {
+		if IsFileProtobuf(path) {
+			slog.Debug("Processing file at path", "path", path)
+			ProcessFile(path)
 		}
 	}
 
-	if fileCount == 0 {
-		slog.Error("input matched no files; see --help", "file", inputPath)
+	return nil
+}
+
+/*
+WalkDir Primary entrypoint for our application. Converts the UNIX path provided to an absolute path, processes the file
+if the path is a single file, and recursively walks the path if it is a directory
+*/
+func WalkDir(path string) {
+	if strings.HasPrefix(path, "~") {
+		path = strings.Replace(path, "~", os.Getenv("HOME"), -1)
+		return
+	}
+
+	info, err := os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		slog.Error("input path does not exist", "path", path)
+		return
+	}
+
+	if !info.IsDir() { // path is a single file, proceed directly to processing
+		if !IsFileProtobuf(path) {
+			slog.Error("input does not match desired extension", "ext", viper.GetString("tag.file-ext"))
+			return
+		}
+
+		ProcessFile(path)
+		return
+	}
+
+	err = filepath.Walk(path, walkFunc) // walk the directory and look for files
+	if err != nil {
+		slog.Error("error while walking directory", "path", path)
 	}
 }
