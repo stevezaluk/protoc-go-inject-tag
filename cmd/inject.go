@@ -37,7 +37,7 @@ var injectCmd = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		protoFiles.IterFiles(viper.GetString("input"))
+		protoFiles.WalkDir(viper.GetString("input"))
 	},
 }
 
