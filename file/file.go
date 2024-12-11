@@ -15,15 +15,24 @@ import (
 	"strings"
 )
 
-func ParseFile(inputPath string, src interface{}, xxxSkip []string) (areas []inject.TextArea, err error) {
-	slog.Debug("parsing file for inject tag comments", "file", inputPath)
-	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, inputPath, src, parser.ParseComments)
+/*
+GenerateAST Take the file path and generate an AST representation of the file
+*/
+func GenerateAST(path string) (*ast.File, error) {
+	slog.Debug("Generating AST for file", "file", path)
+
+	fileSet := token.NewFileSet()
+
+	fileAst, err := parser.ParseFile(fileSet, path, nil, parser.ParseComments)
 	if err != nil {
-		return
+		return fileAst, err
 	}
 
-	for _, decl := range f.Decls {
+	return fileAst, nil
+}
+
+func ParseAST(astFile *ast.File, xxxSkip []string) (areas []inject.TextArea, err error) {
+	for _, decl := range astFile.Decls {
 		// check if is generic declaration
 		genDecl, ok := decl.(*ast.GenDecl)
 		if !ok {
@@ -114,7 +123,6 @@ func ParseFile(inputPath string, src interface{}, xxxSkip []string) (areas []inj
 			}
 		}
 	}
-	slog.Debug("parsed file, number of fields to inject custom tags", "file", inputPath, "areaCount", len(areas))
 	return
 }
 
@@ -165,7 +173,13 @@ func IsFileProtobuf(path string) bool {
 ProcessFile Converts the file passed in path to an AST and returns text areas to be injected
 */
 func ProcessFile(path string) {
-	areas, err := ParseFile(path, nil, viper.GetStringSlice("tag.skip"))
+	astFile, err := GenerateAST(path)
+	if err != nil {
+		slog.Error("Failed to generate AST for file", "err", err)
+		return
+	}
+
+	areas, err := ParseAST(astFile, viper.GetStringSlice("tag.skip"))
 	if err != nil {
 		slog.Error("Error while converting file to AST", "err", err)
 		return
