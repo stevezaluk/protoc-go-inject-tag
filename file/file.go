@@ -19,8 +19,6 @@ import (
 GenerateAST Take the file path and generate an AST representation of the file
 */
 func GenerateAST(path string) (*ast.File, error) {
-	slog.Debug("Generating AST for file", "file", path)
-
 	fileSet := token.NewFileSet()
 
 	fileAst, err := parser.ParseFile(fileSet, path, nil, parser.ParseComments)
@@ -173,15 +171,17 @@ func IsFileProtobuf(path string) bool {
 ProcessFile Converts the file passed in path to an AST and returns text areas to be injected
 */
 func ProcessFile(path string) {
+	slog.Debug("Generating AST for file", "file", path)
 	astFile, err := GenerateAST(path)
 	if err != nil {
-		slog.Error("Failed to generate AST for file", "err", err)
+		slog.Error("Failed to generate AST for file", "file", path, "err", err)
 		return
 	}
 
+	slog.Debug("Parsing AST for file", "file", path)
 	areas, err := ParseAST(astFile, viper.GetStringSlice("tag.skip"))
 	if err != nil {
-		slog.Error("Error while converting file to AST", "err", err)
+		slog.Error("Error while parsing AST file", "file", path, "err", err)
 		return
 	}
 
