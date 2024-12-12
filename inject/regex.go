@@ -6,14 +6,21 @@ import (
 	"regexp"
 )
 
+var (
+	CommentRegex   = "tag.regex.comment"
+	InjectionRegex = "tag.regex.inject"
+	TagsRegex      = "tag.regex.tags"
+	AllRegex       = "tag.regex.all"
+)
+
 /*
 InitRegex Initialize regular expressions used for parsing comments pulled from the AST, and store them in viper
 */
 func InitRegex() {
-	viper.Set("tag.regex.comment", regexp.MustCompile(fmt.Sprintf(`^//.*?@(?i:%s?):\s*(.*)$`, viper.GetString("tag.comment-prefix"))))
-	viper.Set("tag.regex.inject", regexp.MustCompile("`.+`$"))
-	viper.Set("tag.regex.tags", regexp.MustCompile(`[\w_]+:"[^"]+"`))
-	viper.Set("tag.regex.all", regexp.MustCompile(".*"))
+	viper.Set(CommentRegex, regexp.MustCompile(fmt.Sprintf(`^//.*?@(?i:%s?):\s*(.*)$`, viper.GetString("tag.comment-prefix"))))
+	viper.Set(InjectionRegex, regexp.MustCompile("`.+`$"))
+	viper.Set(TagsRegex, regexp.MustCompile(`[\w_]+:"[^"]+"`))
+	viper.Set(AllRegex, regexp.MustCompile(".*"))
 }
 
 /*
