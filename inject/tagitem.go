@@ -11,7 +11,7 @@ type TagItem struct {
 }
 
 func TagFromComment(comment string) (tag string) {
-	match := GetRegex("tag.regex.comment").FindStringSubmatch(comment)
+	match := GetRegex(CommentRegex).FindStringSubmatch(comment)
 	if len(match) == 2 {
 		tag = match[1]
 	}
@@ -50,7 +50,7 @@ func (ti tagItems) override(nti tagItems) tagItems {
 
 func newTagItems(tag string) tagItems {
 	items := []TagItem{}
-	splitted := GetRegex("tag.regex.tags").FindAllString(tag, -1)
+	splitted := GetRegex(TagsRegex).FindAllString(tag, -1)
 
 	for _, t := range splitted {
 		sepPos := strings.Index(t, ":")
