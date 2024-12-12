@@ -52,15 +52,12 @@ func init() {
 
 	injectCmd.Flags().StringP("file-ext", "f", ".pb.go", "The file extensions that should be considered for injection")
 	viper.BindPFlag("tag.file-ext", injectCmd.Flags().Lookup("file-ext"))
-	
+
 	injectCmd.Flags().Bool("remove-comments", false, "Remove comments from generated protobufs")
 	viper.BindPFlag("tag.remove-comments", injectCmd.Flags().Lookup("remove-comments"))
 
 	injectCmd.Flags().String("comment-prefix", "@gotags", "The prefix of the comment that protoc-go-inject-tag should search for when looking for tags to inject")
 	viper.BindPFlag("tag.comment-prefix", injectCmd.Flags().Lookup("comment-prefix"))
-
-	injectCmd.Flags().StringSlice("skip", nil, "Tags that should be skipped")
-	viper.BindPFlag("tag.skip", injectCmd.Flags().Lookup("skip"))
 
 	injectCmd.Flags().StringSlice("tags", nil, "Additional tags that should be applied to all fields")
 	viper.BindPFlag("tag.additional-tags", injectCmd.Flags().Lookup("tags"))

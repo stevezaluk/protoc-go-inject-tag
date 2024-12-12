@@ -2,7 +2,6 @@ package file
 
 import (
 	"errors"
-	"fmt"
 	"github.com/spf13/viper"
 	"github.com/stevezaluk/protoc-go-inject-tag/inject"
 	"go/ast"
@@ -30,11 +29,9 @@ func GenerateAST(path string) (*ast.File, error) {
 }
 
 /*
-GetStructs Fetch all struct declarations present in the AST file
+GetStructFields Fetch fields for all struct declarations in a file
 */
-func GetStructs(astFile *ast.File) []*ast.StructType {
-	var ret []*ast.StructType
-
+func GetStructFields(astFile *ast.File) (ret []*ast.Field) {
 	for _, decl := range astFile.Decls {
 		generic, ok := decl.(*ast.GenDecl)
 		if !ok {
@@ -62,83 +59,20 @@ func GetStructs(astFile *ast.File) []*ast.StructType {
 			continue
 		}
 
-		ret = append(ret, structDecl)
+		ret = append(ret, structDecl.Fields.List...)
 	}
 
 	return ret
 }
 
-func ParseAST(astFile *ast.File, xxxSkip []string) (areas []inject.TextArea, err error) {
-	for _, structDecl := range GetStructs(astFile) {
-		builder := strings.Builder{}
-		if len(xxxSkip) > 0 {
-			for i, skip := range xxxSkip {
-				builder.WriteString(fmt.Sprintf("%s:\"-\"", skip))
-				if i > 0 {
-					builder.WriteString(",")
-				}
-			}
-		}
-
-		for _, field := range structDecl.Fields.List {
-			// skip if field has no doc
-			if len(field.Names) > 0 {
-				name := field.Names[0].Name
-				if len(xxxSkip) > 0 && strings.HasPrefix(name, "XXX") {
-					currentTag := field.Tag.Value
-					area := inject.TextArea{
-						Start:      int(field.Pos()),
-						End:        int(field.End()),
-						CurrentTag: currentTag[1 : len(currentTag)-1],
-						InjectTag:  builder.String(),
-					}
-					areas = append(areas, area)
-				}
-			}
-
-			comments := []*ast.Comment{}
-
-			if field.Doc != nil {
-				comments = append(comments, field.Doc.List...)
-			}
-
-			// The "doc" field (above comment) is more commonly "free-form"
-			// due to the ability to have a much larger comment without it
-			// being unwieldy. As such, the "comment" field (trailing comment),
-			// should take precedence if there happen to be multiple tags
-			// specified, both in the field doc, and the field line. Whichever
-			// comes last, will take precedence.
-			if field.Comment != nil {
-				comments = append(comments, field.Comment.List...)
-			}
-
-			for _, comment := range comments {
-				tag := inject.TagFromComment(comment.Text)
-				if tag == "" {
-					continue
-				}
-
-				if strings.Contains(comment.Text, "inject_tag") {
-					slog.Warn("warn: deprecated 'inject_tag' used")
-				}
-
-				currentTag := field.Tag.Value
-				area := inject.TextArea{
-					Start:        int(field.Pos()),
-					End:          int(field.End()),
-					CurrentTag:   currentTag[1 : len(currentTag)-1],
-					InjectTag:    tag,
-					CommentStart: int(comment.Pos()),
-					CommentEnd:   int(comment.End()),
-				}
-				areas = append(areas, area)
-			}
-		}
+func ParseAST(astFile *ast.File) (areas []*inject.TextArea, err error) {
+	for _, field := range GetStructFields(astFile) {
+		areas = append(areas, inject.NewTextAreas(field)...)
 	}
 	return
 }
 
-func WriteFile(inputPath string, areas []inject.TextArea, removeTagComment bool) (err error) {
+func WriteFile(inputPath string, areas []*inject.TextArea, removeTagComment bool) (err error) {
 	f, err := os.Open(inputPath)
 	if err != nil {
 		return
@@ -157,7 +91,7 @@ func WriteFile(inputPath string, areas []inject.TextArea, removeTagComment bool)
 	for i := range areas {
 		area := areas[len(areas)-i-1]
 		slog.Debug("injected custom tag to expression", "tag", area.InjectTag, "expr", string(contents[area.Start-1:area.End-1]))
-		contents = inject.InjectTag(contents, area, removeTagComment)
+		contents = inject.InjectTag(contents, *area, removeTagComment)
 	}
 	if err = os.WriteFile(inputPath, contents, 0o644); err != nil {
 		return
@@ -193,7 +127,7 @@ func ProcessFile(path string) {
 	}
 
 	slog.Debug("Parsing AST for file", "file", path)
-	areas, err := ParseAST(astFile, viper.GetStringSlice("tag.skip"))
+	areas, err := ParseAST(astFile)
 	if err != nil {
 		slog.Error("Error while parsing AST file", "file", path, "err", err)
 		return
