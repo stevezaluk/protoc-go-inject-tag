@@ -5,17 +5,17 @@ import (
 	"strings"
 )
 
+type TagItem struct {
+	key   string
+	value string
+}
+
 func TagFromComment(comment string) (tag string) {
 	match := CommentRegex.FindStringSubmatch(comment)
 	if len(match) == 2 {
 		tag = match[1]
 	}
 	return
-}
-
-type TagItem struct {
-	key   string
-	value string
 }
 
 type tagItems []TagItem
