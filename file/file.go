@@ -15,9 +15,9 @@ import (
 )
 
 /*
-GenerateAST Take the file path and generate an AST representation of the file
+ReadFile Take the file path and generate an AST representation of the file
 */
-func GenerateAST(path string) (*ast.File, error) {
+func ReadFile(path string) (*ast.File, error) {
 	fileSet := token.NewFileSet()
 
 	fileAst, err := parser.ParseFile(fileSet, path, nil, parser.ParseComments)
@@ -65,7 +65,10 @@ func GetStructFields(astFile *ast.File) (ret []*ast.Field) {
 	return ret
 }
 
-func ParseAST(astFile *ast.File) (areas []*inject.TextArea, err error) {
+/*
+ParseTextAreas Fetch a slice of struct fields from the AST file and generate text areas to be used for injection
+*/
+func ParseTextAreas(astFile *ast.File) (areas []*inject.TextArea, err error) {
 	for _, field := range GetStructFields(astFile) {
 		areas = append(areas, inject.NewTextAreas(field)...)
 	}
@@ -120,14 +123,14 @@ ProcessFile Converts the file passed in path to an AST and returns text areas to
 */
 func ProcessFile(path string) {
 	slog.Debug("Generating AST for file", "file", path)
-	astFile, err := GenerateAST(path)
+	astFile, err := ReadFile(path)
 	if err != nil {
 		slog.Error("Failed to generate AST for file", "file", path, "err", err)
 		return
 	}
 
 	slog.Debug("Parsing AST for file", "file", path)
-	areas, err := ParseAST(astFile)
+	areas, err := ParseTextAreas(astFile)
 	if err != nil {
 		slog.Error("Error while parsing AST file", "file", path, "err", err)
 		return
