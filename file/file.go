@@ -15,9 +15,9 @@ import (
 )
 
 /*
-ReadFile Take the file path and generate an AST representation of the file
+GenerateAST Take the file path and generate an AST representation of the file
 */
-func ReadFile(path string) (*ast.File, error) {
+func GenerateAST(path string) (*ast.File, error) {
 	fileSet := token.NewFileSet()
 
 	fileAst, err := parser.ParseFile(fileSet, path, nil, parser.ParseComments)
@@ -123,7 +123,7 @@ ProcessFile Converts the file passed in path to an AST and returns text areas to
 */
 func ProcessFile(path string) {
 	slog.Debug("Generating AST for file", "file", path)
-	astFile, err := ReadFile(path)
+	astFile, err := GenerateAST(path)
 	if err != nil {
 		slog.Error("Failed to generate AST for file", "file", path, "err", err)
 		return
