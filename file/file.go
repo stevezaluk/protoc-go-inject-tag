@@ -46,12 +46,12 @@ func WriteFile(path string, contents []byte) error {
 /*
 CompleteInjection Iterate through all text area's, inject tags for them, and then returns contents
 */
-func CompleteInjection(contents []byte, areas []*inject.TextArea, removeTagComment bool) []byte {
+func CompleteInjection(contents []byte, areas []*inject.TextArea) []byte {
 	// inject custom tags from tail of file first to preserve order
 	for i := range areas {
 		area := areas[len(areas)-i-1]
 		//slog.Debug("injected custom tag to expression", "tag", area.InjectTag, "expr", string(contents[area.Start-1:area.End-1]))
-		contents = inject.InjectTag(contents, *area, removeTagComment)
+		contents = inject.InjectTag(contents, *area)
 	}
 
 	return contents
@@ -92,7 +92,7 @@ func ProcessFile(path string) {
 		slog.Error("Error while reading file", "file", path, "err", err)
 	}
 
-	fileContents = CompleteInjection(fileContents, areas, viper.GetBool("tag.remove-comments"))
+	fileContents = CompleteInjection(fileContents, areas)
 
 	if err = WriteFile(path, fileContents); err != nil {
 		slog.Error("Error while writing file to disk or injecting tags", "err", err)
