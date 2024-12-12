@@ -11,35 +11,50 @@ import (
 	"strings"
 )
 
-func WriteFile(inputPath string, areas []*inject.TextArea, removeTagComment bool) (err error) {
-	f, err := os.Open(inputPath)
+/*
+ReadFile Open the file at the specified path and return a byte slice representing
+that files contents
+*/
+func ReadFile(path string) ([]byte, error) {
+	file, err := os.Open(path)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	contents, err := io.ReadAll(f)
+	defer file.Close()
+
+	contents, err := io.ReadAll(file)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	if err = f.Close(); err != nil {
-		return
+	return contents, nil
+}
+
+/*
+WriteFile Write the byte array slice passed in the contents parameter to the file
+*/
+func WriteFile(path string, contents []byte) error {
+	err := os.WriteFile(path, contents, 0o644)
+	if err != nil {
+		return err
 	}
 
+	return nil
+}
+
+/*
+CompleteInjection Iterate through all text area's, inject tags for them, and then returns contents
+*/
+func CompleteInjection(contents []byte, areas []*inject.TextArea, removeTagComment bool) []byte {
 	// inject custom tags from tail of file first to preserve order
 	for i := range areas {
 		area := areas[len(areas)-i-1]
-		slog.Debug("injected custom tag to expression", "tag", area.InjectTag, "expr", string(contents[area.Start-1:area.End-1]))
+		//slog.Debug("injected custom tag to expression", "tag", area.InjectTag, "expr", string(contents[area.Start-1:area.End-1]))
 		contents = inject.InjectTag(contents, *area, removeTagComment)
 	}
-	if err = os.WriteFile(inputPath, contents, 0o644); err != nil {
-		return
-	}
 
-	if len(areas) > 0 {
-		slog.Debug("file is injected with custom tags", "file", inputPath)
-	}
-	return
+	return contents
 }
 
 /*
@@ -72,7 +87,14 @@ func ProcessFile(path string) {
 		return
 	}
 
-	if err = WriteFile(path, areas, viper.GetBool("tag.remove-comments")); err != nil {
+	fileContents, err := ReadFile(path)
+	if err != nil {
+		slog.Error("Error while reading file", "file", path, "err", err)
+	}
+
+	fileContents = CompleteInjection(fileContents, areas, viper.GetBool("tag.remove-comments"))
+
+	if err = WriteFile(path, fileContents); err != nil {
 		slog.Error("Error while writing file to disk or injecting tags", "err", err)
 		return
 	}
