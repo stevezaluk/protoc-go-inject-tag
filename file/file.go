@@ -29,33 +29,47 @@ func GenerateAST(path string) (*ast.File, error) {
 	return fileAst, nil
 }
 
-func ParseAST(astFile *ast.File, xxxSkip []string) (areas []inject.TextArea, err error) {
+/*
+GetStructs Fetch all struct declarations present in the AST file
+*/
+func GetStructs(astFile *ast.File) []*ast.StructType {
+	var ret []*ast.StructType
+
 	for _, decl := range astFile.Decls {
-		// check if is generic declaration
-		genDecl, ok := decl.(*ast.GenDecl)
+		generic, ok := decl.(*ast.GenDecl)
 		if !ok {
-			continue
+			continue // skip if we fail to cast here
 		}
 
+		// iterate through each spec until we can successfully cast it
+		// to a TypeSpec. This should be re-worked eventually to see if
+		// there is an easier way to do this without relying on an O(n)
+		// solution. Not sure if that is possible, so it stays for now
 		var typeSpec *ast.TypeSpec
-		for _, spec := range genDecl.Specs {
-			if ts, tsOK := spec.(*ast.TypeSpec); tsOK {
-				typeSpec = ts
+		for _, spec := range generic.Specs {
+			if potentialSpec, ok := spec.(*ast.TypeSpec); ok {
+				typeSpec = potentialSpec
 				break
 			}
 		}
 
-		// skip if can't get type spec
 		if typeSpec == nil {
 			continue
 		}
 
-		// not a struct, skip
 		structDecl, ok := typeSpec.Type.(*ast.StructType)
 		if !ok {
 			continue
 		}
 
+		ret = append(ret, structDecl)
+	}
+
+	return ret
+}
+
+func ParseAST(astFile *ast.File, xxxSkip []string) (areas []inject.TextArea, err error) {
+	for _, structDecl := range GetStructs(astFile) {
 		builder := strings.Builder{}
 		if len(xxxSkip) > 0 {
 			for i, skip := range xxxSkip {
