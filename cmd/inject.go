@@ -60,7 +60,7 @@ func init() {
 	injectCmd.Flags().Bool("remove-comments", false, "Remove comments from generated protobufs")
 	viper.BindPFlag("tag.remove-comments", injectCmd.Flags().Lookup("remove-comments"))
 
-	injectCmd.Flags().String("comment-prefix", "gotags", "The prefix of the comment that protoc-go-inject-tag should search for when looking for tags to inject")
+	injectCmd.Flags().String("comment-prefix", "gotags", "The prefix of the comment that protoc-go-inject-tag should search for when looking for tags to inject. A @ will be prefixed to this value")
 	viper.BindPFlag("tag.comment-prefix", injectCmd.Flags().Lookup("comment-prefix"))
 
 	injectCmd.Flags().StringSlice("tags", nil, "Additional tags that should be applied to all fields")
