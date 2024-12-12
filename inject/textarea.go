@@ -3,15 +3,7 @@ package inject
 import (
 	"go/ast"
 	"log/slog"
-	"regexp"
 	"strings"
-)
-
-var (
-	CommentRegex = regexp.MustCompile(`^//.*?@(?i:gotags?|inject_tags?):\s*(.*)$`)
-	InjectRegex  = regexp.MustCompile("`.+`$")
-	TagsRegex    = regexp.MustCompile(`[\w_]+:"[^"]+"`)
-	AllRegex     = regexp.MustCompile(".*")
 )
 
 type TextArea struct {

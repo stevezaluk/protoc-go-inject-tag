@@ -11,12 +11,12 @@ func InjectTag(contents []byte, area TextArea) (injected []byte) {
 	cti := newTagItems(area.CurrentTag)
 	iti := newTagItems(area.InjectTag)
 	ti := cti.override(iti)
-	expr = InjectRegex.ReplaceAll(expr, []byte(fmt.Sprintf("`%s`", ti.format())))
+	expr = GetRegex("tag.regex.inject").ReplaceAll(expr, []byte(fmt.Sprintf("`%s`", ti.format())))
 
 	if viper.GetBool("tag.remove-comments") {
 		strippedComment := make([]byte, area.CommentEnd-area.CommentStart)
 		copy(strippedComment, contents[area.CommentStart-1:area.CommentEnd-1])
-		strippedComment = AllRegex.ReplaceAll(expr, []byte(" "))
+		strippedComment = GetRegex("tag.regex.all").ReplaceAll(expr, []byte(" "))
 		if area.CommentStart < area.Start {
 			injected = append(injected, contents[:area.CommentStart-1]...)
 			injected = append(injected, strippedComment...)
