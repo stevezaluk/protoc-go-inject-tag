@@ -50,8 +50,8 @@ func CompleteInjection(contents []byte, areas []*inject.TextArea) []byte {
 	// inject custom tags from tail of file first to preserve order
 	for i := range areas {
 		area := areas[len(areas)-i-1]
-		//slog.Debug("injected custom tag to expression", "tag", area.InjectTag, "expr", string(contents[area.Start-1:area.End-1]))
 		contents = inject.InjectTag(contents, *area)
+		slog.Debug("Injected custom tag for expression", "startPos", area.Start, "endPos", area.End)
 	}
 
 	return contents
