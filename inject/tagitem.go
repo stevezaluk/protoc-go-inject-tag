@@ -6,8 +6,8 @@ import (
 )
 
 type TagItem struct {
-	key   string
-	value string
+	Key   string
+	Value string
 }
 
 func TagFromComment(comment string) (tag string) {
@@ -23,7 +23,7 @@ type tagItems []TagItem
 func (ti tagItems) format() string {
 	tags := []string{}
 	for _, item := range ti {
-		tags = append(tags, fmt.Sprintf(`%s:%s`, item.key, item.value))
+		tags = append(tags, fmt.Sprintf(`%s:%s`, item.Key, item.Value))
 	}
 	return strings.Join(tags, " ")
 }
@@ -33,7 +33,7 @@ func (ti tagItems) override(nti tagItems) tagItems {
 	for i := range ti {
 		dup := -1
 		for j := range nti {
-			if ti[i].key == nti[j].key {
+			if ti[i].Key == nti[j].Key {
 				dup = j
 				break
 			}
@@ -55,8 +55,8 @@ func newTagItems(tag string) tagItems {
 	for _, t := range splitted {
 		sepPos := strings.Index(t, ":")
 		items = append(items, TagItem{
-			key:   t[:sepPos],
-			value: t[sepPos+1:],
+			Key:   t[:sepPos],
+			Value: t[sepPos+1:],
 		})
 	}
 	return items
