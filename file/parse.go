@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"log/slog"
 )
 
 /*
@@ -66,4 +67,18 @@ func ParseTextAreas(astFile *ast.File) (areas []*inject.TextArea, err error) {
 		areas = append(areas, inject.NewTextAreas(field)...)
 	}
 	return
+}
+
+/*
+CompleteInjection Iterate through all text area's, inject tags for them, and then returns contents
+*/
+func CompleteInjection(contents []byte, areas []*inject.TextArea) []byte {
+	// inject custom tags from tail of file first to preserve order
+	for i := range areas {
+		area := areas[len(areas)-i-1]
+		contents = inject.InjectTag(contents, *area)
+		slog.Debug("Injected custom tag for expression", "startPos", area.Start, "endPos", area.End)
+	}
+
+	return contents
 }

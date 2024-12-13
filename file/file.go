@@ -3,7 +3,6 @@ package file
 import (
 	"errors"
 	"github.com/spf13/viper"
-	"github.com/stevezaluk/protoc-go-inject-tag/inject"
 	"io"
 	"log/slog"
 	"os"
@@ -41,20 +40,6 @@ func WriteFile(path string, contents []byte) error {
 	}
 
 	return nil
-}
-
-/*
-CompleteInjection Iterate through all text area's, inject tags for them, and then returns contents
-*/
-func CompleteInjection(contents []byte, areas []*inject.TextArea) []byte {
-	// inject custom tags from tail of file first to preserve order
-	for i := range areas {
-		area := areas[len(areas)-i-1]
-		contents = inject.InjectTag(contents, *area)
-		slog.Debug("Injected custom tag for expression", "startPos", area.Start, "endPos", area.End)
-	}
-
-	return contents
 }
 
 /*
