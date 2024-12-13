@@ -78,6 +78,7 @@ func CompleteInjection(contents []byte, areas []*inject.TextArea) []byte {
 		area := areas[len(areas)-i-1]
 		contents = inject.InjectTag(contents, *area)
 		slog.Debug("Injected custom tag for expression", "startPos", area.Start, "endPos", area.End)
+		slog.Debug("TextArea", "start", area.Start, "end", area.End, "currentTag", area.CurrentTag, "injectTag", area.InjectTag, "commentStart", area.CommentStart, "commentEnd", area.CommentEnd)
 	}
 
 	return contents
