@@ -2,8 +2,6 @@ package inject
 
 import (
 	"go/ast"
-	"log/slog"
-	"strings"
 )
 
 type TextArea struct {
@@ -35,12 +33,7 @@ func NewTextAreas(field *ast.Field) (areas []*TextArea) {
 		if tag == "" {
 			continue
 		}
-
-		// to be removed
-		if strings.Contains(commentText, "inject_tag") {
-			slog.Warn("warn: deprecated 'inject_tag' used")
-		}
-
+		
 		area := TextArea{
 			Start:        int(field.Pos()),
 			End:          int(field.End()),
