@@ -5,17 +5,17 @@ import (
 	"strings"
 )
 
+type TagItem struct {
+	Key   string
+	Value string
+}
+
 func TagFromComment(comment string) (tag string) {
-	match := CommentRegex.FindStringSubmatch(comment)
+	match := GetRegex(CommentRegex).FindStringSubmatch(comment)
 	if len(match) == 2 {
 		tag = match[1]
 	}
 	return
-}
-
-type TagItem struct {
-	key   string
-	value string
 }
 
 type tagItems []TagItem
@@ -23,7 +23,7 @@ type tagItems []TagItem
 func (ti tagItems) format() string {
 	tags := []string{}
 	for _, item := range ti {
-		tags = append(tags, fmt.Sprintf(`%s:%s`, item.key, item.value))
+		tags = append(tags, fmt.Sprintf(`%s:%s`, item.Key, item.Value))
 	}
 	return strings.Join(tags, " ")
 }
@@ -33,7 +33,7 @@ func (ti tagItems) override(nti tagItems) tagItems {
 	for i := range ti {
 		dup := -1
 		for j := range nti {
-			if ti[i].key == nti[j].key {
+			if ti[i].Key == nti[j].Key {
 				dup = j
 				break
 			}
@@ -50,13 +50,13 @@ func (ti tagItems) override(nti tagItems) tagItems {
 
 func newTagItems(tag string) tagItems {
 	items := []TagItem{}
-	splitted := TagsRegex.FindAllString(tag, -1)
+	splitted := GetRegex(TagsRegex).FindAllString(tag, -1)
 
 	for _, t := range splitted {
 		sepPos := strings.Index(t, ":")
 		items = append(items, TagItem{
-			key:   t[:sepPos],
-			value: t[sepPos+1:],
+			Key:   t[:sepPos],
+			Value: t[sepPos+1:],
 		})
 	}
 	return items

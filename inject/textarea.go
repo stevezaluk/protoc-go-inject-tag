@@ -1,12 +1,7 @@
 package inject
 
-import "regexp"
-
-var (
-	CommentRegex = regexp.MustCompile(`^//.*?@(?i:gotags?|inject_tags?):\s*(.*)$`)
-	InjectRegex  = regexp.MustCompile("`.+`$")
-	TagsRegex    = regexp.MustCompile(`[\w_]+:"[^"]+"`)
-	AllRegex     = regexp.MustCompile(".*")
+import (
+	"go/ast"
 )
 
 type TextArea struct {
@@ -16,4 +11,40 @@ type TextArea struct {
 	InjectTag    string
 	CommentStart int
 	CommentEnd   int
+}
+
+/*
+NewTextAreas Create a slice of text area pointers for a struct field
+*/
+func NewTextAreas(field *ast.Field) (areas []*TextArea) {
+	var comments []*ast.Comment
+
+	if field.Doc != nil {
+		comments = append(comments, field.Doc.List...)
+	}
+
+	if field.Comment != nil {
+		comments = append(comments, field.Comment.List...)
+	}
+
+	for _, comment := range comments {
+		commentText := comment.Text
+		tag := TagFromComment(commentText)
+		if tag == "" {
+			continue
+		}
+		
+		area := TextArea{
+			Start:        int(field.Pos()),
+			End:          int(field.End()),
+			CurrentTag:   field.Tag.Value[1 : len(field.Tag.Value)-1],
+			InjectTag:    tag,
+			CommentStart: int(comment.Pos()),
+			CommentEnd:   int(comment.End()),
+		}
+
+		areas = append(areas, &area)
+	}
+
+	return areas
 }
