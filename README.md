@@ -93,6 +93,10 @@ You can validate that this is installed using the following command: `protoc --v
 
 Next install `protoc-gen-go`: `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`
 
+### Installing
+
+1. Enter the following command into a terminal: `go install github.com/stevezaluk/protoc-go-inject-tag@latest`
+
 ### Building
 
 1. Clone the repo
